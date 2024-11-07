@@ -205,6 +205,7 @@ public class SQLOperation extends ExecuteStatementOperation {
       // case, when calling fetch queries since execute() has returned.
       // For now, we disable the test attempts.
       driver.compileAndRespond(statement);
+      queryInfo.setQueryPlan(driver.getPlan());
       if (queryState.getQueryTag() != null && queryState.getQueryId() != null) {
         parentSession.updateQueryTag(queryState.getQueryId(), queryState.getQueryTag());
       }

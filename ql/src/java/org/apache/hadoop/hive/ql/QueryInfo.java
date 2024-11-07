@@ -17,6 +17,16 @@
  */
 package org.apache.hadoop.hive.ql;
 
+import org.apache.hadoop.hive.ql.exec.Utilities;
+import org.apache.hadoop.hive.ql.exec.tez.TezTask;
+import org.apache.tez.common.counters.CounterGroup;
+import org.apache.tez.common.counters.FileSystemCounter;
+import org.apache.tez.common.counters.TezCounter;
+import org.apache.tez.common.counters.TezCounters;
+import org.json.JSONObject;
+
+import java.util.List;
+
 /**
  * The class is synchronized, as WebUI may access information about a running query.
  */
@@ -32,6 +42,7 @@ public class QueryInfo {
   private Long endTime;
   private String state;
   private QueryDisplay queryDisplay;
+  private QueryPlan queryPlan;
 
   private String operationLogLocation;
 
@@ -62,6 +73,34 @@ public class QueryInfo {
 
   public synchronized void setQueryDisplay(QueryDisplay queryDisplay) {
     this.queryDisplay = queryDisplay;
+  }
+
+  public synchronized QueryPlan getQueryPlan() {
+    return queryPlan;
+  }
+
+  public synchronized void setQueryPlan(QueryPlan queryPlan) {
+    this.queryPlan = queryPlan;
+  }
+
+  public synchronized JSONObject getFSCounters() {
+    JSONObject countersJson = new JSONObject();
+    if (this.queryPlan != null) {
+      List<TezTask> rootTasks = Utilities.getTezTasks(this.queryPlan.getRootTasks());
+      for (TezTask tezTask : rootTasks) {
+        TezCounters counters = tezTask.getTezCounters();
+        if (counters != null) {
+          for (CounterGroup group : counters) {
+            if (group.getName().equals(FileSystemCounter.class.getName())) {
+              for (TezCounter counter : group) {
+                countersJson.put(counter.getDisplayName(), counter.getValue());
+              }
+            }
+          }
+        }
+      }
+    }
+    return countersJson;
   }
 
   public String getUserName() {
