@@ -37,7 +37,7 @@ public final class Op {
   public final String name;
   // tezJsonParser
   public final DagJsonParser parser;
-  public String operatorId;
+  protected String operatorId;
   public Op parent;
   public final List<Op> children;
   public final Map<String, String> attrs;
@@ -48,7 +48,7 @@ public final class Op {
   // the vertex that this operator output to
   public String outputVertexName;
   // the Operator type
-  public OpType type;
+  protected OpType type;
 
   public enum OpType {
     MAPJOIN, MERGEJOIN, RS, OTHERS

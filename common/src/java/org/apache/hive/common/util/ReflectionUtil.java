@@ -129,6 +129,7 @@ public class ReflectionUtil {
    * @param value new value
    * @throws RuntimeException in case the field is not found or cannot be set.
    */
+  @SuppressFBWarnings(value = "REFLF_REFLECTION_MAY_INCREASE_ACCESSIBILITY_OF_FIELD", justification = "Intended")
   public static void setField(Object object, String field, Object value) {
     try {
       Field fieldToChange = object.getClass().getDeclaredField(field);

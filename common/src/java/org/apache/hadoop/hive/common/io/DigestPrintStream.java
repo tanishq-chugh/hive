@@ -27,9 +27,14 @@ public class DigestPrintStream extends FetchConverter {
 
   private final MessageDigest digest;
 
-  public DigestPrintStream(OutputStream out, String encoding) throws Exception {
+  private DigestPrintStream(OutputStream out, String encoding, MessageDigest digest) throws Exception {
     super(out, false, encoding);
-    this.digest = MessageDigest.getInstance("MD5");
+    this.digest = digest;
+  }
+
+  public static DigestPrintStream build(OutputStream out, String encoding) throws Exception {
+    MessageDigest digest = MessageDigest.getInstance("MD5");
+    return new DigestPrintStream(out, encoding, digest);
   }
 
   @Override

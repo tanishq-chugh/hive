@@ -75,12 +75,12 @@ public class ConvertedOutputFile extends OutputFile {
     },
     HASH_QUERY_RESULTS {
       public PrintStream getConvertedPrintStream(PrintStream inner) throws Exception {
-        return new DigestPrintStream(inner, "UTF-8");
+        return DigestPrintStream.build(inner, "UTF-8");
       }
     },
     SORT_AND_HASH_QUERY_RESULTS {
       public PrintStream getConvertedPrintStream(PrintStream inner) throws Exception {
-        return new SortAndDigestPrintStream(inner, "UTF-8");
+        return SortAndDigestPrintStream.build(inner, "UTF-8");
       }
     },
     NONE {

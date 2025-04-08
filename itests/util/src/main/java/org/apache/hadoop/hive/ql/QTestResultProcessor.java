@@ -97,9 +97,9 @@ public class QTestResultProcessor {
     if (operations.contains(Operation.SORT)) {
       ss.out = new SortPrintStream(fo, "UTF-8");
     } else if (operations.contains(Operation.HASH)) {
-      ss.out = new DigestPrintStream(fo, "UTF-8");
+      ss.out = DigestPrintStream.build(fo, "UTF-8");
     } else if (operations.contains(Operation.SORT_N_HASH)) {
-      ss.out = new SortAndDigestPrintStream(fo, "UTF-8");
+      ss.out = SortAndDigestPrintStream.build(fo, "UTF-8");
     } else {
       ss.out = new SessionStream(fo, true, "UTF-8");
     }

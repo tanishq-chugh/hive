@@ -40,7 +40,7 @@ public abstract class DagJsonParser implements JsonParser {
   // the vertex that should be inlined. <Operator, list of Vertex that is
   // inlined>
   public final Map<Op, List<Connection>> inlineMap = new LinkedHashMap<>();
-  public boolean rewriteObject;
+  protected boolean rewriteObject;
 
   public DagJsonParser() {
     super();

@@ -21,6 +21,7 @@ package org.apache.hadoop.hive.common.jsonexplain;
 import org.apache.hive.common.util.SuppressFBWarnings;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -32,7 +33,7 @@ public class DagJsonParserUtils {
       "Reduce Output Operator" });
 
   public static List<String> getOperatorNoStats() {
-    return operatorNoStats;
+    return Collections.unmodifiableList(operatorNoStats);
   }
 
   public static String renameReduceOutputOperator(String operatorName, Vertex vertex) {

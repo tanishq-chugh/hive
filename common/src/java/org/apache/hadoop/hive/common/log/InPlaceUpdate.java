@@ -25,6 +25,7 @@ import java.io.PrintStream;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.fusesource.jansi.Ansi.ansi;
@@ -49,10 +50,10 @@ public class InPlaceUpdate {
   /* Pretty print the values */
   private final DecimalFormat secondsFormatter = new DecimalFormat("#0.00");
   private int lines = 0;
-  private PrintStream out;
+  private final PrintStream out;
 
   public InPlaceUpdate(PrintStream out) {
-    this.out = out;
+    this.out = Objects.requireNonNull(out, "PrintStream cannot be null");
   }
 
   public InPlaceUpdate() {

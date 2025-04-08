@@ -465,7 +465,7 @@ public class HiveConf extends Configuration {
    * @return an unmodifiable set containing llap ConfVars
    */
   public static final Set<String> getLlapDaemonConfVars() {
-    return llapDaemonVarsSet;
+    return Collections.unmodifiableSet(llapDaemonVarsSet);
   }
 
 
@@ -6568,16 +6568,19 @@ public class HiveConf extends Configuration {
       .trustStoreType(getVar(ConfVars.HIVE_ZOOKEEPER_SSL_TRUSTSTORE_TYPE)).build();
   }
 
+  @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW", justification = "Intended")
   public HiveConf() {
     super();
     initialize(this.getClass());
   }
 
+  @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW", justification = "Intended")
   public HiveConf(Class<?> cls) {
     super();
     initialize(cls);
   }
 
+  @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW", justification = "Intended")
   public HiveConf(Configuration other, Class<?> cls) {
     super(other);
     initialize(cls);
@@ -7284,7 +7287,7 @@ public class HiveConf extends Configuration {
     // This should be called rarely enough; for now it's ok to just lock every time.
     synchronized (reverseMapLock) {
       if (reverseMap != null) {
-        return reverseMap;
+        return new HashMap<>(reverseMap);
       }
     }
     HashMap<String, ConfVars> vars = new HashMap<>();
@@ -7296,10 +7299,10 @@ public class HiveConf extends Configuration {
     }
     synchronized (reverseMapLock) {
       if (reverseMap != null) {
-        return reverseMap;
+        return new HashMap<>(reverseMap);
       }
       reverseMap = vars;
-      return reverseMap;
+      return new HashMap<>(reverseMap);
     }
   }
 

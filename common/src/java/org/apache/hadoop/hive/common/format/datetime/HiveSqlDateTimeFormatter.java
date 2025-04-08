@@ -28,6 +28,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.hive.common.type.Date;
 import org.apache.hadoop.hive.common.type.Timestamp;
+import org.apache.hive.common.util.SuppressFBWarnings;
 
 import java.io.Serializable;
 import java.time.DateTimeException;
@@ -520,6 +521,7 @@ public class HiveSqlDateTimeFormatter implements Serializable {
       this(tokenType, null, null, string, string.length(), false);
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Intended")
     public Token(TokenType tokenType, TemporalField temporalField, TemporalUnit temporalUnit,
         String string, int length, boolean fillMode) {
       this.type = tokenType;
@@ -558,6 +560,7 @@ public class HiveSqlDateTimeFormatter implements Serializable {
    * @param forParsing Flag to indicate use of pattern
    * @throws IllegalArgumentException if pattern is invalid
    */
+  @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW", justification = "Intended")
   public HiveSqlDateTimeFormatter(final String pattern, final boolean forParsing) {
     this(pattern, forParsing, Optional.absent());
   }
@@ -574,6 +577,7 @@ public class HiveSqlDateTimeFormatter implements Serializable {
    * @throws IllegalArgumentException if pattern is invalid
    */
   @VisibleForTesting
+  @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW", justification = "Intended")
   HiveSqlDateTimeFormatter(final String pattern, final boolean forParsing, final Optional<LocalDateTime> now) {
     this.pattern = Objects.requireNonNull(pattern, "Pattern cannot be null");
     this.now = Objects.requireNonNull(now);

@@ -113,11 +113,13 @@ public class FixedSizedObjectPool<T> implements Pool<T> {
   private final PoolObjectHelper<T> helper;
   private final T[] pool;
 
+  @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW", justification = "Intended")
   public FixedSizedObjectPool(int size, PoolObjectHelper<T> helper) {
     this(size, helper, LOG.isTraceEnabled());
   }
 
   @VisibleForTesting
+  @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW", justification = "Intended")
   public FixedSizedObjectPool(int size, PoolObjectHelper<T> helper, boolean doTraceLog) {
     if (size > MAX_SIZE) {
       throw new AssertionError("Size must be <= " + MAX_SIZE);

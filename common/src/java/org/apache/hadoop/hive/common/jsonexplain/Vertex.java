@@ -46,7 +46,7 @@ public final class Vertex implements Comparable<Vertex>{
   public final JSONObject vertexObject;
   // whether this vertex is dummy (which does not really exists but is created),
   // e.g., a dummy vertex for a mergejoin branch
-  public boolean dummy;
+  private boolean dummy;
   // the outputOps in this vertex.
   public final List<Op> outputOps= new ArrayList<>();
   // the inputOps in this vertex.
@@ -55,13 +55,13 @@ public final class Vertex implements Comparable<Vertex>{
   // vertex is a mergejoin
   public final List<Vertex> mergeJoinDummyVertices = new ArrayList<>();
   // this vertex has multiple reduce operators
-  public int numReduceOp = 0;
+  private int numReduceOp = 0;
   // execution mode
-  public String executionMode = "";
+  private String executionMode = "";
   // tagToInput for reduce work
   public Map<String, String> tagToInput = new LinkedHashMap<>();
   // tag
-  public String tag;
+  protected String tag;
   protected final Logger LOG = LoggerFactory.getLogger(this.getClass().getName());
 
   public static enum VertexType {
@@ -72,7 +72,7 @@ public final class Vertex implements Comparable<Vertex>{
   public static enum EdgeType {
     BROADCAST, SHUFFLE, MULTICAST, PARTITION_ONLY_SHUFFLE, FORWARD, XPROD_EDGE, UNKNOWN
   };
-  public String edgeType;
+  protected String edgeType;
 
   public Vertex(String name, JSONObject vertexObject, Stage stage, DagJsonParser dagJsonParser) {
     super();

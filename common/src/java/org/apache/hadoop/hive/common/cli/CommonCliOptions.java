@@ -73,13 +73,13 @@ public class CommonCliOptions {
     OPTIONS.addOption(new Option("h", "help", false, "Print help information"));
 
     if (includeHiveConf) {
-      OPTIONS.addOption(OptionBuilder
-          .withValueSeparator()
-          .hasArgs(2)
-          .withArgName("property=value")
-          .withLongOpt("hiveconf")
-          .withDescription("Use value for given property")
-          .create());
+      OPTIONS.addOption(Option.builder()
+                      .valueSeparator()
+                      .numberOfArgs(2)
+                      .argName("property=value")
+                      .longOpt("hiveconf")
+                      .desc("Use value for given property")
+                      .build());
     }
   }
 

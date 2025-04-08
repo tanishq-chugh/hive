@@ -27,9 +27,14 @@ public class SortAndDigestPrintStream extends SortPrintStream {
 
   private final MessageDigest digest;
 
-  public SortAndDigestPrintStream(OutputStream out, String encoding) throws Exception {
+  private SortAndDigestPrintStream(OutputStream out, String encoding, MessageDigest digest) throws Exception {
     super(out, encoding);
-    this.digest = MessageDigest.getInstance("MD5");
+    this.digest = digest;
+  }
+
+  public static SortAndDigestPrintStream build(OutputStream out, String encoding) throws Exception {
+    MessageDigest digest = MessageDigest.getInstance("MD5");
+    return new SortAndDigestPrintStream(out, encoding, digest);
   }
 
   @Override

@@ -61,6 +61,7 @@ public class RetryUtilities {
     private int maxRetries;
     private static final Logger LOG = LoggerFactory.getLogger(ExponentiallyDecayingBatchWork.class);
 
+    @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW", justification = "Intended")
     public ExponentiallyDecayingBatchWork(int batchSize, int reducingFactor, int maxRetries) {
       if (batchSize <= 0) {
         throw new IllegalArgumentException(String.format(

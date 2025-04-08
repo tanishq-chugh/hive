@@ -17,6 +17,7 @@
 package org.apache.hive.http.security;
 
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hive.common.util.SuppressFBWarnings;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.security.ServerAuthException;
 import org.eclipse.jetty.security.UserAuthentication;
@@ -49,6 +50,7 @@ import net.sf.jpam.Pam;
 public class PamAuthenticator extends LoginAuthenticator {
   private final String pamServiceNames;
 
+  @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW", justification = "Intended")
   public PamAuthenticator(HiveConf conf) throws AuthenticationException {
     super();
     pamServiceNames = conf.getVar(HiveConf.ConfVars.HIVE_SERVER2_PAM_SERVICES);

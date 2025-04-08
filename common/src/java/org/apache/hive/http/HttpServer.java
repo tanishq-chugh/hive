@@ -66,6 +66,7 @@ import org.apache.hadoop.security.authentication.server.AuthenticationFilter;
 import org.apache.hadoop.security.authorize.AccessControlList;
 import org.apache.hadoop.hive.common.classification.InterfaceAudience;
 import org.apache.hadoop.security.http.CrossOriginFilter;
+import org.apache.hive.common.util.SuppressFBWarnings;
 import org.apache.hive.http.security.PamAuthenticator;
 import org.apache.hive.http.security.PamConstraint;
 import org.apache.hive.http.security.PamConstraintMapping;
@@ -144,6 +145,7 @@ public class HttpServer {
   /**
    * Create a status server on the given port.
    */
+  @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW", justification = "Intended")
   private HttpServer(final Builder b) throws IOException {
     this.name = b.name;
     this.xFrameOptionIsEnabled = b.xFrameEnabled;
@@ -261,6 +263,7 @@ public class HttpServer {
       return this;
     }
 
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Intended")
     public Builder setPAMAuthenticator(PamAuthenticator pamAuthenticator){
       this.pamAuthenticator = pamAuthenticator;
       return this;
