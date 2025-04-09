@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import javax.security.auth.Subject;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.crypto.CipherSuite;
@@ -102,7 +103,6 @@ import org.apache.hadoop.security.authentication.util.KerberosName;
 import org.apache.hadoop.tools.DistCp;
 import org.apache.hadoop.tools.DistCpConstants;
 import org.apache.hadoop.util.Progressable;
-import org.apache.hadoop.util.SuppressFBWarnings;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
@@ -288,7 +288,7 @@ public class Hadoop23Shims extends HadoopShimsSecure {
   /**
    * Shim for MiniMrCluster
    */
-  public class MiniMrShim implements HadoopShims.MiniMrShim {
+  public static class MiniMrShim implements HadoopShims.MiniMrShim {
 
     private final MiniMRCluster mr;
     private final Configuration conf;
@@ -300,7 +300,7 @@ public class Hadoop23Shims extends HadoopShimsSecure {
 
     public MiniMrShim(Configuration conf, int numberOfTaskTrackers,
                       String nameNode, int numDir) throws IOException {
-      this.conf = conf;
+      this.conf = new Configuration(conf);
 
       JobConf jConf = new JobConf(conf);
       jConf.set("yarn.scheduler.capacity.root.queues", "default");
@@ -349,12 +349,12 @@ public class Hadoop23Shims extends HadoopShimsSecure {
     return new MiniTezLocalShim(conf, usingLlap);
   }
 
-  public class MiniTezLocalShim extends Hadoop23Shims.MiniMrShim {
+  public static class MiniTezLocalShim extends Hadoop23Shims.MiniMrShim {
     private final Configuration conf;
     private final boolean isLlap;
 
     public MiniTezLocalShim(Configuration conf, boolean usingLlap) {
-      this.conf = conf;
+      this.conf = new Configuration(conf);
       this.isLlap = usingLlap;
       setupConfiguration(conf);
     }
@@ -401,7 +401,7 @@ public class Hadoop23Shims extends HadoopShimsSecure {
   /**
    * Shim for MiniTezCluster
    */
-  public class MiniTezShim extends Hadoop23Shims.MiniMrShim {
+  public static class MiniTezShim extends Hadoop23Shims.MiniMrShim {
 
     private final MiniTezCluster mr;
     private final Configuration conf;
@@ -553,6 +553,7 @@ public class Hadoop23Shims extends HadoopShimsSecure {
   public static class MiniDFSShim implements HadoopShims.MiniDFSShim {
     private final MiniDFSCluster cluster;
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public MiniDFSShim(MiniDFSCluster cluster) {
       this.cluster = cluster;
     }
@@ -669,8 +670,8 @@ public class Hadoop23Shims extends HadoopShimsSecure {
     }
   }
   @Override
-  public WebHCatJTShim getWebHCatShim(Configuration conf, UserGroupInformation ugi) throws IOException {
-    return new WebHCatJTShim23(conf, ugi);//this has state, so can't be cached
+  public WebHCatJTShim getWebHCatShim(Configuration conf, UserGroupInformation ugi) throws RuntimeException {
+    return WebHCatJTShim23.createInstance(conf, ugi);//this has state, so can't be cached
   }
 
   private static final class HdfsFileStatusWithIdImpl implements HdfsFileStatusWithId {
@@ -761,9 +762,7 @@ public class Hadoop23Shims extends HadoopShimsSecure {
   }
 
   static class ProxyFileSystem23 extends ProxyFileSystem {
-    public ProxyFileSystem23(FileSystem fs) {
-      super(fs);
-    }
+
     public ProxyFileSystem23(FileSystem fs, URI uri) {
       super(fs, uri);
     }
@@ -776,24 +775,31 @@ public class Hadoop23Shims extends HadoopShimsSecure {
     @Override
     public RemoteIterator<LocatedFileStatus> listLocatedStatus(final Path f)
       throws FileNotFoundException, IOException {
-      return new RemoteIterator<LocatedFileStatus>() {
-        private final RemoteIterator<LocatedFileStatus> stats =
-            ProxyFileSystem23.super.listLocatedStatus(
+
+      try{
+        final RemoteIterator<LocatedFileStatus> remoteIterator=ProxyFileSystem23.super.listLocatedStatus(
                 ProxyFileSystem23.super.swizzleParamPath(f));
+        return new RemoteIterator<LocatedFileStatus>() {
+          private final RemoteIterator<LocatedFileStatus> stats =remoteIterator;
 
-        @Override
-        public boolean hasNext() throws IOException {
-          return stats.hasNext();
-        }
 
-        @Override
-        public LocatedFileStatus next() throws IOException {
-          LocatedFileStatus result = stats.next();
-          return new LocatedFileStatus(
-              ProxyFileSystem23.super.swizzleFileStatus(result, false),
-              result.getBlockLocations());
-        }
-      };
+          @Override
+          public boolean hasNext() throws IOException {
+            return stats.hasNext();
+          }
+
+          @Override
+          public LocatedFileStatus next() throws IOException {
+            LocatedFileStatus result = stats.next();
+            return new LocatedFileStatus(
+                    ProxyFileSystem23.super.swizzleFileStatus(result, false),
+                    result.getBlockLocations());
+          }
+        };
+      } catch (IOException e) {
+          throw e;
+      }
+
     }
 
     /**
@@ -1005,6 +1011,7 @@ public class Hadoop23Shims extends HadoopShimsSecure {
 
     private final DistributedFileSystem dfs;
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public StoragePolicyShim(DistributedFileSystem fs) {
       this.dfs = fs;
     }
@@ -1334,10 +1341,24 @@ public class Hadoop23Shims extends HadoopShimsSecure {
 
     private final Configuration conf;
 
-    public HdfsEncryptionShim(URI uri, Configuration conf) throws IOException {
+    public static HdfsEncryptionShim createInstance(URI uri, Configuration conf) throws IOException{
+      HdfsAdmin hadmin=null;
+      KeyProvider keyP=null;
+      try{
+        hadmin=new HdfsAdmin(uri,conf);
+        keyP=hadmin.getKeyProvider();
+      }catch (IOException e){
+        throw  new IOException(e);
+      }
+      HdfsEncryptionShim hdfsEncryptionShim=new HdfsEncryptionShim(conf);
+      hdfsEncryptionShim.hdfsAdmin = hadmin;
+      hdfsEncryptionShim.keyProvider = keyP;
+      return hdfsEncryptionShim;
+    }
+
+
+    private HdfsEncryptionShim(Configuration conf) {
       this.conf = conf;
-      this.hdfsAdmin = new HdfsAdmin(uri, conf);
-      this.keyProvider = this.hdfsAdmin.getKeyProvider();
     }
 
     @Override
@@ -1527,7 +1548,7 @@ public class Hadoop23Shims extends HadoopShimsSecure {
     if (isHdfsEncryptionSupported()) {
       URI uri = fs.getUri();
       if ("hdfs".equals(uri.getScheme()) && fs instanceof DistributedFileSystem) {
-        return new HdfsEncryptionShim(uri, conf);
+        return HdfsEncryptionShim.createInstance(uri,conf);
       }
     }
 

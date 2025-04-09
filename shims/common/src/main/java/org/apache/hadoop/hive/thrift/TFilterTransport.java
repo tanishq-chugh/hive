@@ -18,6 +18,7 @@
 
 package org.apache.hadoop.hive.thrift;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.thrift.TConfiguration;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
@@ -29,6 +30,7 @@ import org.apache.thrift.transport.TTransportException;
  public class TFilterTransport extends TTransport {
    protected final TTransport wrapped;
 
+   @SuppressFBWarnings("EI_EXPOSE_REP2")
    public TFilterTransport(TTransport wrapped) {
      this.wrapped = wrapped;
    }

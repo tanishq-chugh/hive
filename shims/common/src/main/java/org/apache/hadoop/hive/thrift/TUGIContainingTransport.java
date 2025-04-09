@@ -21,6 +21,7 @@ package org.apache.hadoop.hive.thrift;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentMap;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
@@ -40,10 +41,12 @@ public class TUGIContainingTransport extends TFilterTransport {
     super(wrapped);
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public UserGroupInformation getClientUGI(){
     return ugi;
   }
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public void setClientUGI(UserGroupInformation ugi){
     this.ugi = ugi;
   }

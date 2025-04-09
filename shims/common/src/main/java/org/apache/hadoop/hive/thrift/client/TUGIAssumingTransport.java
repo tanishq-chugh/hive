@@ -21,6 +21,7 @@ package org.apache.hadoop.hive.thrift.client;
 import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.hive.thrift.TFilterTransport;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.thrift.transport.TTransport;
@@ -38,6 +39,7 @@ import org.apache.thrift.transport.TTransportException;
  public class TUGIAssumingTransport extends TFilterTransport {
    protected UserGroupInformation ugi;
 
+   @SuppressFBWarnings("EI_EXPOSE_REP2")
    public TUGIAssumingTransport(TTransport wrapped, UserGroupInformation ugi) {
      super(wrapped);
      this.ugi = ugi;
