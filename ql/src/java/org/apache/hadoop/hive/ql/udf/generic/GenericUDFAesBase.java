@@ -22,10 +22,12 @@ import static org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveO
 
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.hadoop.hive.ql.exec.UDFArgumentException;
@@ -41,21 +43,33 @@ import org.apache.hadoop.io.Text;
 
 /**
  * GenericUDFAesBase.
- *
+ * Supports AES (Legacy) and AES/GCM/NoPadding modes.
+ * aes_encrypt: Accepts optional 3rd arg for mode (Default: AES).
+ * aes_decrypt: Accepts optional 3rd arg. 
+ * If provided -> Strict Mode (throws Exception on failure).
+ * If omitted -> Smart Fallback Mode (GCM -> Legacy).
  */
 public abstract class GenericUDFAesBase extends GenericUDF {
-  protected transient Converter[] converters = new Converter[2];
-  protected transient PrimitiveCategory[] inputTypes = new PrimitiveCategory[2];
+  protected transient Converter[] converters = new Converter[3];
+  protected transient PrimitiveCategory[] inputTypes = new PrimitiveCategory[3];
   protected final BytesWritable output = new BytesWritable();
   protected transient boolean isStr0;
   protected transient boolean isStr1;
   protected transient boolean isKeyConstant;
-  protected transient Cipher cipher;
   protected transient SecretKey secretKey;
+  protected transient Cipher gcmCipher;
+  protected transient Cipher legacyCipher;
+
+  private boolean isGCMMode;
+  private boolean isModeExplicitlyProvided;
+
+  private static final int GCM_IV_LENGTH = 12;
+  private static final int GCM_TAG_LENGTH = 128;
+  private static final String AES_GCM_NOPADDING = "AES/GCM/NoPadding";
 
   @Override
   public ObjectInspector initialize(ObjectInspector[] arguments) throws UDFArgumentException {
-    checkArgsSize(arguments, 2, 2);
+    checkArgsSize(arguments, 2, 3);
 
     checkArgPrimitive(arguments, 0);
     checkArgPrimitive(arguments, 1);
@@ -104,10 +118,30 @@ public abstract class GenericUDFAesBase extends GenericUDF {
       secretKey = getSecretKey(key, keyLength);
     }
 
+    String cipherTransform = "AES";
+    this.isModeExplicitlyProvided = (arguments.length == 3);
+
+    if (this.isModeExplicitlyProvided) {
+      checkArgPrimitive(arguments, 2);
+      checkArgGroups(arguments, 2, inputTypes, STRING_GROUP);
+
+      if (!(arguments[2] instanceof ConstantObjectInspector)) {
+        throw new UDFArgumentException("The third argument (transformation mode) must be a constant string.");
+      }
+
+      String userDefinedMode = getConstantStringValue(arguments, 2);
+      if (userDefinedMode != null) {
+        cipherTransform = userDefinedMode;
+      }
+    }
+
+    this.isGCMMode = AES_GCM_NOPADDING.equalsIgnoreCase(cipherTransform);
+    
     try {
-      cipher = Cipher.getInstance("AES");
+      gcmCipher = Cipher.getInstance(AES_GCM_NOPADDING);
+      legacyCipher = Cipher.getInstance("AES");
     } catch (NoSuchPaddingException | NoSuchAlgorithmException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException("Failed to initialize ciphers", e);
     }
 
     ObjectInspector outputOI = PrimitiveObjectInspectorFactory.writableBinaryObjectInspector;
@@ -185,13 +219,64 @@ public abstract class GenericUDFAesBase extends GenericUDF {
   }
 
   protected byte[] aesFunction(byte[] input, int inputLength, SecretKey secretKey) {
-    try {
-      cipher.init(getCipherMode(), secretKey);
-      byte[] res = cipher.doFinal(input, 0, inputLength);
-      return res;
-    } catch (GeneralSecurityException e) {
-      return null;
+    if (getCipherMode() == Cipher.ENCRYPT_MODE) {
+      try {
+        return isGCMMode ? encryptGCM(input, inputLength, secretKey) : encryptLegacy(input, inputLength, secretKey);
+      } catch (Exception e) {
+        throw new RuntimeException("Failed to encrypt data", e);
+      }
+    } else {
+      if (isModeExplicitlyProvided) {
+        try {
+          return isGCMMode ? decryptGCM(input, inputLength, secretKey) : decryptLegacy(input, inputLength, secretKey);
+        } catch (Exception e) {
+          throw new RuntimeException("Decryption failed using " + (isGCMMode ? AES_GCM_NOPADDING : "Legacy AES."), e);
+        }
+      } else {
+        try {
+          return decryptGCM(input, inputLength, secretKey);
+        } catch (Exception gcmException) {
+          try {
+            return decryptLegacy(input, inputLength, secretKey);
+          } catch (Exception legacyException) {
+            throw new RuntimeException("Failed to decrypt data", legacyException);
+          }
+        }
+      }
     }
+  }
+  
+  private byte[] encryptLegacy(byte[] input, int inputLength, SecretKey key) throws Exception {
+    legacyCipher.init(Cipher.ENCRYPT_MODE, key);
+    return legacyCipher.doFinal(input, 0, inputLength);
+  }
+
+  private byte[] decryptLegacy(byte[] input, int inputLength, SecretKey key) throws Exception {
+    legacyCipher.init(Cipher.DECRYPT_MODE, key);
+    return legacyCipher.doFinal(input, 0, inputLength);
+  }
+
+  private byte[] encryptGCM(byte[] input, int inputLength, SecretKey key) throws Exception {
+    byte[] iv = new byte[GCM_IV_LENGTH];
+    new SecureRandom().nextBytes(iv);
+    GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
+
+    gcmCipher.init(Cipher.ENCRYPT_MODE, key, gcmSpec);
+    byte[] cipherText = gcmCipher.doFinal(input, 0, inputLength);
+
+    byte[] output = new byte[iv.length + cipherText.length];
+    System.arraycopy(iv, 0, output, 0, iv.length);
+    System.arraycopy(cipherText, 0, output, iv.length, cipherText.length);
+    return output;
+  }
+
+  private byte[] decryptGCM(byte[] input, int inputLength, SecretKey key) throws Exception {
+    byte[] iv = new byte[GCM_IV_LENGTH];
+    System.arraycopy(input, 0, iv, 0, GCM_IV_LENGTH);
+    GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
+
+    gcmCipher.init(Cipher.DECRYPT_MODE, key, gcmSpec);
+    return gcmCipher.doFinal(input, GCM_IV_LENGTH, inputLength - GCM_IV_LENGTH);
   }
 
   abstract protected int getCipherMode();
