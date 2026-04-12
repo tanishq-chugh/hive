@@ -596,6 +596,7 @@ public class StatsUtils {
     // partition column, so we calculate the NDV from partition list
     ColStatistics partCS = new ColStatistics(ci.getInternalName(), ci.getType()
         .getTypeName());
+    partCS.setIsPartitionCol(true);
     long numPartitions = getNDVPartitionColumn(partList,
         ci.getInternalName());
     partCS.setCountDistint(numPartitions);
