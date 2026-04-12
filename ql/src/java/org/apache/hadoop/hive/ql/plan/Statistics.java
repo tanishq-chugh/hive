@@ -240,19 +240,28 @@ public class Statistics implements Serializable {
   }
 
   public void addToColumnStats(List<ColStatistics> colStats) {
+    System.out.println("Statistics::addToColumnStats called with colStats: " + colStats);
     if (colStats == null) {
       return;
     }
     if (columnStats == null) {
+      System.out.println("Statistics::addToColumnStats columnStats is null");
       columnStats = Maps.newHashMap();
     }
-
+    System.out.println("-------------------------------------------------------");
     for (ColStatistics cs : colStats) {
+      
       if (cs == null) {
         continue;
       }
       String key = cs.getColumnName();
       ColStatistics existing = columnStats.computeIfAbsent(key, k -> cs);
+
+      System.out.println("Statistics::addToColumnStats inside for cs: " + cs);
+      System.out.println("Statistics::addToColumnStats inside for existing: " + existing);
+
+      System.out.println("Statistics::addToColumnStats cs.getNumNulls(): " + cs.getNumNulls() + ", existing.getNumNulls(): " + existing.getNumNulls());
+      
       if (existing != cs) {
         existing.setAvgColLen(Math.max(existing.getAvgColLen(), cs.getAvgColLen()));
         if (cs.getNumNulls() < 0 || existing.getNumNulls() < 0) {
@@ -263,6 +272,7 @@ public class Statistics implements Serializable {
         existing.setCountDistint(Math.max(existing.getCountDistint(), cs.getCountDistint()));
       }
     }
+    System.out.println("-------------------------------------------------------");
   }
 
   public void updateColumnStatsState(State newState) {

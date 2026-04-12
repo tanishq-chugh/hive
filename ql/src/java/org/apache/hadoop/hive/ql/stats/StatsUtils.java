@@ -1823,22 +1823,32 @@ public class StatsUtils {
    */
   public static long getDataSizeFromColumnStats(long numRows, List<ColStatistics> colStats) {
     long result = 0;
-
+    System.out.println("StatsUtils::getDataSizeFromColumnStats called with numRows: " + numRows + ", colStats: " + colStats);
     if (numRows <= 0 || colStats == null) {
       return result;
     }
 
     if (colStats.isEmpty()) {
+      System.out.println("StatsUtils::getDataSizeFromColumnStats colStats is empty");
       // this may happen if we are not projecting any column from current operator
       // think count(*) where we are projecting rows without any columns
       // in such a case we estimate empty row to be of size of empty java object.
       return numRows * JavaDataModel.JAVA64_REF;
     }
 
+    
+    System.out.println("-------------------------------------------------------");
+    
     for (ColStatistics cs : colStats) {
       if (cs != null) {
         String colTypeLowerCase = cs.getColumnType().toLowerCase();
+        
+        System.out.println("StatsUtils::getDataSizeFromColumnStats inside for cs.getColumnName(): " + cs.getColumnName() + ", cs.getNumNulls()" + cs.getNumNulls());
+
         long nonNullCount = cs.getNumNulls() > 0 ? numRows - cs.getNumNulls() + 1 : numRows;
+        
+        System.out.println("StatsUtils::getDataSizeFromColumnStats inside for nonNullCount: " + nonNullCount);
+        
         double sizeOf = 0;
         if (colTypeLowerCase.equals(serdeConstants.TINYINT_TYPE_NAME)
             || colTypeLowerCase.equals(serdeConstants.SMALLINT_TYPE_NAME)
@@ -1870,6 +1880,9 @@ public class StatsUtils {
       }
     }
 
+
+    System.out.println("-------------------------------------------------------");
+    System.out.println("StatsUtils::getDataSizeFromColumnStats result: " + result);
     return result;
   }
 

@@ -70,10 +70,12 @@ public class ColStatistics {
   }
 
   public long getNumNulls() {
+    System.out.println("ColStatistics::getNumNulls called returning numNulls: " + numNulls + " for columnName: " + this.getColumnName());
     return numNulls;
   }
 
   public void setNumNulls(long numNulls) {
+    System.out.println("ColStatistics::setNumNulls called with numNulls: " + numNulls + " for columnName: " + this.getColumnName());
     this.numNulls = numNulls;
   }
 

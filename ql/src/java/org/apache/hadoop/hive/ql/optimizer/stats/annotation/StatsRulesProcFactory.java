@@ -2607,12 +2607,15 @@ public class StatsRulesProcFactory {
     private void updateColStats(HiveConf conf, Statistics stats, long leftUnmatchedRows, long rightUnmatchedRows,
         long newNumRows, CommonJoinOperator<? extends JoinDesc> jop, Map<Integer, Long> rowCountParents) {
 
+      
+      System.out.println("StatsRulesProcFactory::updateColStats called with stats: " + stats + ", newNumRows: " + newNumRows);
+      
       if (newNumRows < 0) {
-        LOG.debug("STATS-" + jop.toString() + ": Overflow in number of rows. "
+        LOG.info("STATS-" + jop.toString() + ": Overflow in number of rows. "
             + newNumRows + " rows will be set to Long.MAX_VALUE");
       }
       if (newNumRows == 0) {
-        LOG.debug("STATS-" + jop.toString() + ": Equals 0 in number of rows. "
+        LOG.info("STATS-" + jop.toString() + ": Equals 0 in number of rows. "
             + newNumRows + " rows will be set to 1");
         newNumRows = 1;
       }
@@ -2627,7 +2630,13 @@ public class StatsRulesProcFactory {
       // and stats for columns from 2nd parent should be scaled down by 200x
       List<ColStatistics> colStats = stats.getColumnStats();
       Set<String> colNameStatsAvailable = new HashSet<>();
+
+      System.out.println("StatsRulesProcFactory::updateColStats colStats: " + colStats);
+      System.out.println("StatsRulesProcFactory::updateColStats newNumRows: " + newNumRows);
+      System.out.println("-------------------------------------------------------");
+      
       for (ColStatistics cs : colStats) {
+        System.out.println("StatsRulesProcFactory::updateColStats inside for cs: " + cs);
         colNameStatsAvailable.add(cs.getColumnName());
         int pos = jop.getConf().getReversedExprs().get(cs.getColumnName());
         long oldDV = cs.getCountDistint();
@@ -2636,10 +2645,12 @@ public class StatsRulesProcFactory {
             = HiveConf.getBoolVar(conf, ConfVars.HIVE_STATS_JOIN_NDV_READJUSTMENT);
         long newDV = oldDV;
         if (useCalciteForNdvReadjustment) {
+          System.out.println("StatsRulesProcFactory::updateColStats inside for calcite is needed");
           Double approxNdv = RelMdUtil.numDistinctVals(oldDV * 1.0, newNumRows * 1.0);
           Preconditions.checkNotNull(approxNdv, "approximate NDV is null");
           newDV = approxNdv.longValue();
         } else {
+          System.out.println("StatsRulesProcFactory::updateColStats inside for calcite not needed");
           long oldRowCount = rowCountParents.get(pos);
           double ratio = (double) newNumRows / (double) oldRowCount;
 
@@ -2650,10 +2661,12 @@ public class StatsRulesProcFactory {
           if (ratio <= 1.0) {
             newDV = (long) Math.ceil(ratio * oldDV);
           }
+          System.out.println("StatsRulesProcFactory::updateColStats inside for ratio: " + ratio + " , newDV: " + newDV);
         }
         cs.setCountDistint(newDV);
         updateNumNulls(cs, leftUnmatchedRows, rightUnmatchedRows, newNumRows, pos, jop);
       }
+      System.out.println("-------------------------------------------------------");
       stats.setColumnStats(colStats);
       long newDataSize = StatsUtils
           .getDataSizeFromColumnStats(newNumRows, colStats);
