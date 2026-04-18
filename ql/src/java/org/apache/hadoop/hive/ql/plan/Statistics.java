@@ -266,13 +266,8 @@ public class Statistics implements Serializable {
         existing.setAvgColLen(Math.max(existing.getAvgColLen(), cs.getAvgColLen()));
         if (cs.getNumNulls() < 0 || existing.getNumNulls() < 0) {
           existing.setNumNulls(-1);
-        } else if (existing.isPartitionCol() || cs.isPartitionCol()) {
-          existing.setNumNulls(Math.max(existing.getNumNulls(), cs.getNumNulls()));
         } else {
           existing.setNumNulls(StatsUtils.safeAdd(existing.getNumNulls(), cs.getNumNulls()));
-        }
-        if (existing.isPartitionCol() != cs.isPartitionCol()) {
-          existing.setIsPartitionCol(existing.isPartitionCol() || cs.isPartitionCol());
         }
         existing.setCountDistint(Math.max(existing.getCountDistint(), cs.getCountDistint()));
       }
