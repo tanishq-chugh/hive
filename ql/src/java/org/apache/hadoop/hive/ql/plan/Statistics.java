@@ -263,13 +263,18 @@ public class Statistics implements Serializable {
       System.out.println("Statistics::addToColumnStats cs.getNumNulls(): " + cs.getNumNulls() + ", existing.getNumNulls(): " + existing.getNumNulls());
       
       if (existing != cs) {
+        System.out.println("Statistics::addToColumnStats existing != cs");
         existing.setAvgColLen(Math.max(existing.getAvgColLen(), cs.getAvgColLen()));
         if (cs.getNumNulls() < 0 || existing.getNumNulls() < 0) {
+          System.out.println("Statistics::addToColumnStats existing.getNumNulls() || cs.getNumNulls()");
           existing.setNumNulls(-1);
         } else {
+          System.out.println("Statistics::addToColumnStats calling StatsUtils.safeAdd(existing.getNumNulls(), cs.getNumNulls())");
           existing.setNumNulls(StatsUtils.safeAdd(existing.getNumNulls(), cs.getNumNulls()));
         }
         existing.setCountDistint(Math.max(existing.getCountDistint(), cs.getCountDistint()));
+      } else {
+        System.out.println("Statistics::addToColumnStats existing == cs");
       }
     }
     System.out.println("-------------------------------------------------------");

@@ -76,6 +76,9 @@ public class ColStatistics {
 
   public void setNumNulls(long numNulls) {
     System.out.println("ColStatistics::setNumNulls called with numNulls: " + numNulls + " for columnName: " + this.getColumnName());
+    if (numNulls == 3074) {
+      System.out.println("ColStatistics::setNumNulls set 3074 called for columnName: " + this.getColumnName());
+    }
     this.numNulls = numNulls;
   }
 
