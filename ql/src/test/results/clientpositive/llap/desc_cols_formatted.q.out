@@ -182,6 +182,25 @@ num_falses
 bit_vector          	                    
 comment             	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"point\":\"true\"}}
+PREHOOK: query: DESCRIBE FORMATTED tbl_part name
+PREHOOK: type: DESCTABLE
+PREHOOK: Input: default@tbl_part
+POSTHOOK: query: DESCRIBE FORMATTED tbl_part name
+POSTHOOK: type: DESCTABLE
+POSTHOOK: Input: default@tbl_part
+col_name            	name                
+data_type           	string              
+min                 	                    
+max                 	                    
+num_nulls           	0                   
+distinct_count      	0                   
+avg_col_len         	100.0               
+max_col_len         	100                 
+num_trues           	                    
+num_falses          	                    
+bit_vector          	                    
+comment             	                    
+COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"name\":\"true\"}}
 PREHOOK: query: DESCRIBE tbl_part id
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@tbl_part
@@ -197,3 +216,10 @@ POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@tbl_part
 x                   	int                 	from deserializer   
 y                   	int                 	from deserializer   
+PREHOOK: query: DESCRIBE tbl_part name
+PREHOOK: type: DESCTABLE
+PREHOOK: Input: default@tbl_part
+POSTHOOK: query: DESCRIBE tbl_part name
+POSTHOOK: type: DESCTABLE
+POSTHOOK: Input: default@tbl_part
+name                	string              	                    

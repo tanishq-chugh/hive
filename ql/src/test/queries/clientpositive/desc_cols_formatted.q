@@ -14,6 +14,8 @@ DESCRIBE FORMATTED tbl_part;
 
 DESCRIBE FORMATTED tbl_part id;
 DESCRIBE FORMATTED tbl_part Point;
+DESCRIBE FORMATTED tbl_part name;
 
 DESCRIBE tbl_part id;
 DESCRIBE tbl_part Point;
+DESCRIBE tbl_part name;

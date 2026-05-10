@@ -91,7 +91,13 @@ public class DescTableOperation extends DDLOperation<DescTableDesc> {
         if (desc.isFormatted()) {
           getColumnDataColPathSpecified(table, part, cols, colStats, deserializer);
         } else {
-          cols.addAll(Hive.getFieldsFromDeserializer(desc.getColumnPath(), deserializer, context.getConf()));
+          String colName = desc.getColumnPath().split("\\.")[2];
+          FieldSchema partitionCol = table.getPartColByName(colName.toLowerCase());
+          if (partitionCol != null) {
+            cols.add(partitionCol);
+          } else {
+            cols.addAll(Hive.getFieldsFromDeserializer(desc.getColumnPath(), deserializer, context.getConf()));
+          }
         }
       }
       fixDecimalColumnTypeName(cols);
