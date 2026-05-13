@@ -88,17 +88,7 @@ public class DescTableOperation extends DDLOperation<DescTableDesc> {
       if (desc.getColumnPath() == null) {
         getColumnsNoColumnPath(table, part, cols);
       } else {
-        if (desc.isFormatted()) {
-          getColumnDataColPathSpecified(table, part, cols, colStats, deserializer);
-        } else {
-          String colName = desc.getColumnPath().split("\\.")[2];
-          FieldSchema partitionCol = table.getPartColByName(colName.toLowerCase());
-          if (partitionCol != null) {
-            cols.add(partitionCol);
-          } else {
-            cols.addAll(Hive.getFieldsFromDeserializer(desc.getColumnPath(), deserializer, context.getConf()));
-          }
-        }
+        getColumnDataColPathSpecified(table, part, cols, colStats, deserializer);
       }
       fixDecimalColumnTypeName(cols);
 
@@ -250,31 +240,35 @@ public class DescTableOperation extends DDLOperation<DescTableDesc> {
       throws HiveException, MetaException {
     FieldSchema partCol = table.getPartColByName(colNames.getFirst());
     cols.add(partCol);
-    PartitionIterable parts = new PartitionIterable(context.getDb(), table, null,
-        MetastoreConf.getIntVar(context.getConf(), MetastoreConf.ConfVars.BATCH_RETRIEVE_MAX));
-    ColumnInfo ci = new ColumnInfo(partCol.getName(),
-        TypeInfoUtils.getTypeInfoFromTypeString(partCol.getType()), null, false);
-    ColStatistics cs = StatsUtils.getColStatsForPartCol(ci, parts, context.getConf());
-    ColumnStatisticsData data = new ColumnStatisticsData();
-    StatsUtils.fillColumnStatisticsData(data, cs, partCol.getType());
-    ColumnStatisticsObj cso = new ColumnStatisticsObj(partCol.getName(), partCol.getType(), data);
-    colStats.add(cso);
-    StatsSetupConst.setColumnStatsState(tableProps, colNames);
+    if (desc.isFormatted()) {
+      PartitionIterable parts = new PartitionIterable(context.getDb(), table, null,
+          MetastoreConf.getIntVar(context.getConf(), MetastoreConf.ConfVars.BATCH_RETRIEVE_MAX));
+      ColumnInfo ci = new ColumnInfo(partCol.getName(),
+          TypeInfoUtils.getTypeInfoFromTypeString(partCol.getType()), null, false);
+      ColStatistics cs = StatsUtils.getColStatsForPartCol(ci, parts, context.getConf());
+      ColumnStatisticsData data = new ColumnStatisticsData();
+      StatsUtils.fillColumnStatisticsData(data, cs, partCol.getType());
+      ColumnStatisticsObj cso = new ColumnStatisticsObj(partCol.getName(), partCol.getType(), data);
+      colStats.add(cso);
+      StatsSetupConst.setColumnStatsState(tableProps, colNames);
+    }
   }
 
   private void getColumnsForNotPartitionKeyColumn(Table table, List<FieldSchema> cols, List<ColumnStatisticsObj> colStats,
       Deserializer deserializer, String colName, Map<String, String> tableProps)
       throws HiveException {
     cols.addAll(getFilteredFieldsFromDeserializer(table, deserializer, colName));
-    List<String> parts = context.getDb().getPartitionNames(table, (short) -1);
-    AggrStats aggrStats = context.getDb().getAggrColStatsFor(table, Lists.newArrayList(colName.toLowerCase()),
-        parts, false);
-    colStats.addAll(aggrStats.getColStats());
-    
-    if (parts.size() == aggrStats.getPartsFound()) {
-      StatsSetupConst.setColumnStatsState(tableProps, Lists.newArrayList(colName.toLowerCase()));
-    } else {
-      StatsSetupConst.removeColumnStatsState(tableProps, Lists.newArrayList(colName.toLowerCase()));
+    if (desc.isFormatted()) {
+      List<String> parts = context.getDb().getPartitionNames(table, (short) -1);
+      AggrStats aggrStats = context.getDb().getAggrColStatsFor(table, Lists.newArrayList(colName.toLowerCase()),
+          parts, false);
+      colStats.addAll(aggrStats.getColStats());
+
+      if (parts.size() == aggrStats.getPartsFound()) {
+        StatsSetupConst.setColumnStatsState(tableProps, Lists.newArrayList(colName.toLowerCase()));
+      } else {
+        StatsSetupConst.removeColumnStatsState(tableProps, Lists.newArrayList(colName.toLowerCase()));
+      }
     }
   }
 
