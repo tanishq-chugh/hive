@@ -201,20 +201,34 @@ public class DescTableOperation extends DDLOperation<DescTableDesc> {
         }
         table.setParameters(tableProps);
       } else {
-        cols.addAll(getFilteredFieldsFromDeserializer(table, deserializer, colName));
-        colStats.addAll(context.getDb().getTableColumnStatistics(table, colNames, false));
+        addColsResolvedFromDeserializer(table, deserializer, colName, cols);
+        if (desc.isFormatted()) {
+          colStats.addAll(context.getDb().getTableColumnStatistics(table, colNames, false));
+        }
       }
     } else {
       List<String> partitions = new ArrayList<>();
       String partName = part.getName();
       partitions.add(partName);
-      cols.addAll(getFilteredFieldsFromDeserializer(table, deserializer, colName));
-      Map<String, List<ColumnStatisticsObj>> partitionColumnStatistics = context.getDb().getPartitionColumnStatistics(
-          table.getDbName(), table.getTableName(), partitions, colNames, false);
-      List<ColumnStatisticsObj> partitionColStat = partitionColumnStatistics.get(partName);
-      if (partitionColStat != null) {
-        colStats.addAll(partitionColStat);
+      addColsResolvedFromDeserializer(table, deserializer, colName, cols);
+      if (desc.isFormatted()) {
+        Map<String, List<ColumnStatisticsObj>> partitionColumnStatistics = context.getDb()
+            .getPartitionColumnStatistics(table.getDbName(), table.getTableName(), partitions,
+                colNames, false);
+        List<ColumnStatisticsObj> partitionColStat = partitionColumnStatistics.get(partName);
+        if (partitionColStat != null) {
+          colStats.addAll(partitionColStat);
+        }
       }
+    }
+  }
+
+  private void addColsResolvedFromDeserializer(Table table, Deserializer deserializer, String firstColName,
+      List<FieldSchema> cols) throws HiveException {
+    if (desc.getColumnPath().split("\\.").length > 3 || firstColName.startsWith("$")) {
+      cols.addAll(Hive.getFieldsFromDeserializer(desc.getColumnPath(), deserializer, context.getConf()));
+    } else {
+      cols.addAll(getFilteredFieldsFromDeserializer(table, deserializer, firstColName));
     }
   }
 
@@ -257,7 +271,7 @@ public class DescTableOperation extends DDLOperation<DescTableDesc> {
   private void getColumnsForNotPartitionKeyColumn(Table table, List<FieldSchema> cols, List<ColumnStatisticsObj> colStats,
       Deserializer deserializer, String colName, Map<String, String> tableProps)
       throws HiveException {
-    cols.addAll(getFilteredFieldsFromDeserializer(table, deserializer, colName));
+    addColsResolvedFromDeserializer(table, deserializer, colName, cols);
     if (desc.isFormatted()) {
       List<String> parts = context.getDb().getPartitionNames(table, (short) -1);
       AggrStats aggrStats = context.getDb().getAggrColStatsFor(table, Lists.newArrayList(colName.toLowerCase()),
